@@ -6,11 +6,10 @@ from utils.dimacs_parser import parse
 
 
 
-
 def main():
   solver = DLL_Solver()
-  parse('../eg0.txt', solver)
-  solver._print()
+  parse('../eg1.txt', solver)
+  # solver._print()
   solver.solve()
 
 

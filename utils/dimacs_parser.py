@@ -22,7 +22,7 @@ def parse(filename, solver):
             clause.add_var(v)
         solver.add_clause(clause)
 
-  solver._print()
+  # solver._print()
   return solver
 
 
