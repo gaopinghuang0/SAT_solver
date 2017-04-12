@@ -15,7 +15,6 @@ class DLL_Solver(object):
     self.lits_type = []
     self.current_assign_idx = 0
 
-
   def add_clause(self, clause):
     if not isinstance(clause, Clause):
       raise TypeError('type should be Clause')
@@ -32,6 +31,7 @@ class DLL_Solver(object):
     if lit.x not in self .lits_type:
       self.lits_type.append(lit.x)
       self.assigns.append(None)
+    self.lits_type.sort()
 
   def _print(self):
     for c in self.clauses:
@@ -58,55 +58,56 @@ class DLL_Solver(object):
     Check if sat
     """
     
+    if self.current_assign_idx > len(self.lits_type) - 1:
+      self.current_assign_idx -= 1
+      
     current_assign_idx = self.current_assign_idx
     assigns = self.assigns
-    sat = 0
-    for c in self.clauses:
-      print c.status
-      if c.status is None:
-        sat *= 0
-      else:
-        sat *= c.status
-    if sat:
-      return True
-
+    
     print assigns
-    print current_assign_idx
-
+    print "current_assign_idx ", current_assign_idx
+    print assigns[current_assign_idx]
     if assigns[current_assign_idx] == None:
       assigns[current_assign_idx] = 0
-      self.current_assign_idx += 1
+      # self.current_assign_idx += 1
     elif assigns[current_assign_idx] == 0:
       assigns[current_assign_idx] = 1
-      self.current_assign_idx += 1
+      # self.current_assign_idx += 1
     else:
+      
       self.current_assign_idx -= 1
 
     return self.sat
 
   def solve(self):
-    
     while(not self.check_sat()):
       # assign_idx = 0
       # assign_val = self.assigns[assign_idx]
-      assign_val = self.assigns[self.current_assign_idx]
+      current_assign_idx = self.current_assign_idx
+      assign_val = self.assigns[current_assign_idx]
+      assign_var_type = self.lits_type[current_assign_idx]
+      sat_clause_count = 0
       for c in self.clauses:
         # c._print()
         status = c.status
+        print c.status
         if status  == STATUS_OK: # Do not need to test if the clause is sat
+          sat_clause_count += 1
           pass
         elif status == STATUS_UNRES: # Clasue unresolved
-          var_type = int(abs(c.lits[c.index].x)/2)
           var = c.lits[c.index]
-          print var_type, var
+          var_type = abs(var.x)
          
-          if var_type == self.current_assign_idx: # assign 1 or 0 to xn
+          if var_type == assign_var_type: # assign 1 or 0 to xn
             var_result = var.result(assign_val)
             if var_result == 1:
               c.status = STATUS_OK
             elif var_result == 0:
               c.status = STATUS_UNRES
-            c.index += 1
+              if assign_val == 1:
+                c.index += 1
+            # else:
+
           else: # the assignment is not current literal
             pass
          
@@ -115,9 +116,11 @@ class DLL_Solver(object):
             # Not sat
             return False
           else:
-            self.current_assign_idx -= 1
-      # self.current_assign_idx += 1
-
+            # self.current_assign_idx -= 1
+            pass
+      if sat_clause_count == len(self.clauses):
+        self.sat = True
+      self.current_assign_idx += 1
     pass
 
 
