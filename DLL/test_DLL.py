@@ -9,9 +9,8 @@ from utils.dimacs_parser import parse
 def main():
   solver = DLL_Solver()
   parse('../eg1.txt', solver)
-  # solver._print()
+  solver._print()
   solver.solve()
-
 
 
 

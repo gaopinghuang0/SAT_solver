@@ -20,6 +20,7 @@ def parse(filename, solver):
         for v in line.split():
           if int(v) != 0:
             clause.add_var(v)
+            solver.add_lit_type(Lit(v))
         solver.add_clause(clause)
 
   # solver._print()
