@@ -11,7 +11,8 @@ def main():
   parse('../eg0.txt', solver)
   solver._print()
   solver.solve()
-
+  print solver.assigns
+  print solver.lits_type
 
 
 if __name__ == '__main__':

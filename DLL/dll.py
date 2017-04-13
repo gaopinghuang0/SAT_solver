@@ -64,18 +64,15 @@ class DLL_Solver(object):
     current_assign_idx = self.current_assign_idx
     assigns = self.assigns
     
-    print assigns
-    print "current_assign_idx ", current_assign_idx
-    print assigns[current_assign_idx]
+    if self.sat:
+      print "sat"
+      return self.sat
+    print self.sat
+     
     if assigns[current_assign_idx] == None:
-      assigns[current_assign_idx] = 0
-      # self.current_assign_idx += 1
+      self.assigns[current_assign_idx] = 0
     elif assigns[current_assign_idx] == 0:
-      assigns[current_assign_idx] = 1
-      # self.current_assign_idx += 1
-    else:
-      
-      self.current_assign_idx -= 1
+      self.assigns[current_assign_idx] = 1
 
     return self.sat
 
@@ -87,41 +84,71 @@ class DLL_Solver(object):
       assign_val = self.assigns[current_assign_idx]
       assign_var_type = self.lits_type[current_assign_idx]
       sat_clause_count = 0
+      unsat_clause_count = 0
+      unresolved_clause_count = 0
+     
+      print self.assigns
+      print "current_assign_idx ", current_assign_idx
+
       for c in self.clauses:
         # c._print()
         status = c.status
-        print c.status
         if status  == STATUS_OK: # Do not need to test if the clause is sat
           sat_clause_count += 1
-          pass
         elif status == STATUS_UNRES: # Clasue unresolved
+          # print assign_var_type
+          # print c.lits
+          # print c.index
+          # print "\n"
           var = c.lits[c.index]
           var_type = abs(var.x)
-         
+          # unresolved_clause_count += 1 
           if var_type == assign_var_type: # assign 1 or 0 to xn
             var_result = var.result(assign_val)
             if var_result == 1:
               c.status = STATUS_OK
+              sat_clause_count += 1
             elif var_result == 0:
               c.status = STATUS_UNRES
-              if assign_val == 1:
-                c.index += 1
-            # else:
-
+              unresolved_clause_count += 1
+              if c.index == len(c.lits)-1:
+                unsat_clause_count += 1
+                c.staus = STATUS_FAIL
+              # if assign_val == 1:
+            if c.index == len(c.lits)-1:
+              pass
+            else:
+              c.index += 1
           else: # the assignment is not current literal
+            unresolved_clause_count += 1
+            c.status = STATUS_UNRES
             pass
          
         else: # Clause is not sat in current assign
+          unsat_clause_count += 1
+          
           if self.current_assign_idx == -1:
-            # Not sat
             return False
           else:
-            # self.current_assign_idx -= 1
             pass
+     
+      # check sat condition
+      print sat_clause_count, unresolved_clause_count, unsat_clause_count
       if sat_clause_count == len(self.clauses):
         self.sat = True
-      self.current_assign_idx += 1
-    pass
+        return True
+      elif unresolved_clause_count:
+        if assign_val == 1:
+          self.assigns[current_assign_idx] =None
+          self.current_assign_idx -= 1
+        else:
+          self.current_assign_idx += 1
+      elif unsat_clause_count:
+        if (sat_clause_count+unsat_clause_count) == len(self.clauses):
+          self.assigns[current_assign_idx] = None
+          self.current_assign_idx -= 1
+          if self.current_assign_idx == -1:
+            return False
 
 
 
