@@ -20,6 +20,6 @@ def file_gen(filename, var_num, clause_num):
 
 if __name__ == '__main__':
   def main():
-    file_gen('eg2.txt', 2, 3)
+    file_gen('eg2.txt', 10, 15)
 
   main()

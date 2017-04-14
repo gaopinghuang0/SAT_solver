@@ -34,11 +34,13 @@ class Lit(object):
     else:
       return 0
 
+  @property
   def var(self):
     "the i-th variable"
     return abs(self.x)
 
-  def val(self):
+  @property
+  def value(self):
     return self.x
 
 
@@ -65,7 +67,7 @@ class Clause(object):
     self.lits = _lits
 
   def to_list(self):
-    return [a.val() for a in self.lits]
+    return [a.value for a in self.lits]
 
   def my_sort(self):
     """
@@ -78,6 +80,12 @@ class Clause(object):
 
   def size(self):
     return len(self.lits)
+
+  def get_lit_by_index(self, index=None):
+    return self.lits[self.index if index is None else index]
+
+  def is_last(self):
+    return self.index == self.size - 1
 
 
 

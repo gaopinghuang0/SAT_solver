@@ -8,11 +8,15 @@ from utils.dimacs_parser import parse
 
 def main():
   solver = DLL_Solver()
-  parse('../eg0.txt', solver)
-  solver._print()
+  parse('../eg2.txt', solver)
+  print '#'*6, 'before', '#'*6
+  solver._print(True)
+
   solver.solve()
-  print solver.assigns
-  print solver.lits_type
+  print '#'*6, 'after', '#'*6
+  solver._print(True)
+
+
 
 
 if __name__ == '__main__':
