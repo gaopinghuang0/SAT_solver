@@ -8,13 +8,14 @@ from utils.dimacs_parser import parse
 
 def main():
   solver = DLL_Solver()
-  parse('../eg2.txt', solver)
-  print '#'*6, 'before', '#'*6
-  solver._print(True)
+  parse('../benchmarks/random_v20c100.cnf', solver)
+  # print '#'*6, 'before', '#'*6
+  # solver._print(True)
 
   solver.solve()
-  print '#'*6, 'after', '#'*6
-  solver._print(True)
+  # print '#'*6, 'after', '#'*6
+  # solver._print(True)
+  print solver.sat
 
 
 

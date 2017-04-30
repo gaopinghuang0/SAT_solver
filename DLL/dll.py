@@ -33,7 +33,7 @@ class DLL_Solver(object):
     _lits = clause.to_list()
     if len(_lits) > len(set(map(abs, _lits))):
       self.tautology.append(clause)
-      print _lits, 'is tautology'
+      # print _lits, 'is tautology'
       return
     if not isinstance(clause, Clause):
       raise TypeError('type should be Clause')
@@ -43,15 +43,20 @@ class DLL_Solver(object):
     return self.vars[self.current_assign_idx]
 
   def _print(self, verbose=False):
-    for c in self.clauses:
-      c._print()
 
     if verbose:
-      print 'assigns:', self.assigns
-      print 'vars:', self.vars
-      # print solver.current_assign_idx
-      print 'is SAT:', self.sat == STATUS_OK
-
+      for c in self.clauses:
+        c._print()
+      print solver.current_assign_idx
+        
+    if self.sat == STATUS_OK:
+      print 'RESULT: SAT'
+      print 'ASSIGNMENT:',
+      for var, ass in zip(self.vars, self.assigns):
+        print 'x{}={}'.format(var, ass),
+      print
+    else:
+      print 'RESULT: UNSAT'
 
   def reset_all_clauses(self):
     # reset current_assign_idx to the first 0 it met backwards
@@ -62,20 +67,27 @@ class DLL_Solver(object):
         i -= 1
       elif self.assigns[i] == 0:
         self.assigns[i] = 1
-        self.current_assign_idx = i
+        # self.current_assign_idx = i
         break
       else:
         raise ValueError('should not be None when backtracking')
-    if i == -1:
-      self.current_assign_idx = i
-      return
+    # if i == -1:
+    self.current_assign_idx = i
+      # return
 
-    # reset clause.index so that var is no more than assign_var
+    # reset clause.index so that var is just more than assign_var
+    # if clause.index -> var is larger than assign_var, reset to the first one that is more than assign var
+    # otherwise, stay the same
     assign_var = self.get_curr_var()
     for c in self.clauses:
-      for index, lit in enumerate(c.lits):
-        if lit.var <= assign_var:
-          c.index = index
+      lit = c.get_lit_by_index()
+      if lit.var <= assign_var:
+        continue
+      else:
+        for index, lit in enumerate(c.lits):
+          if lit.var >= assign_var:
+            c.index = index
+            break
 
 
   def pick_next(self):
@@ -86,10 +98,18 @@ class DLL_Solver(object):
     assign_value = self.assigns[self.current_assign_idx]
 
     sat_clause_count = 0
+    fail_clause_count = 0
     for c in self.clauses:
+      # if c.status == STATUS_UNRES:
+      #   c._print()
+      #   print c.index
       sat_clause_count += 1 if c.status == STATUS_OK else 0
+      fail_clause_count += 1 if c.status == STATUS_FAIL else 0
     if sat_clause_count == self.size():
       self.sat = STATUS_OK
+    if fail_clause_count == self.size():
+      self.sat = STATUS_FAIL
+    # print fail_clause_count
 
     if self.sat == STATUS_OK:
       return None
@@ -102,8 +122,8 @@ class DLL_Solver(object):
         raise ValueError('should not be None when backtracking')
       self.sat = STATUS_UNRES
       return self.current_assign_idx >= 0
-    else: # forwards
-      if self.current_assign_idx < len(self.assigns) - 1:
+    else: # forwards when STATUS_UNRES
+      if self.current_assign_idx < len(self.assigns)-1:
         if assign_value == 0 or assign_value == 1:
           self.current_assign_idx += 1
           self.assigns[self.current_assign_idx] = 0
@@ -118,7 +138,7 @@ class DLL_Solver(object):
       current_assign_idx = self.current_assign_idx
       assign_value = self.assigns[current_assign_idx]
       assign_var = self.get_curr_var()
-      print self.assigns, assign_var, assign_value, current_assign_idx
+      # print self.assigns, assign_var, assign_value, current_assign_idx
       for c in self.clauses:
         lit = c.get_lit_by_index()
         if lit.var == assign_var:
@@ -127,7 +147,7 @@ class DLL_Solver(object):
             c.status = STATUS_OK
           elif var_result == 0:
             if c.index == c.size()-1:
-              c.staus = STATUS_FAIL
+              c.status = STATUS_FAIL
               self.sat = STATUS_FAIL
               break
             else:
@@ -135,81 +155,6 @@ class DLL_Solver(object):
               c.status = STATUS_UNRES
 
     return self.sat
-
-
-  def solve_old(self):
-    while(not self.check_sat()):
-      # assign_idx = 0
-      # assign_val = self.assigns[assign_idx]
-      current_assign_idx = self.current_assign_idx
-      assign_value = self.assigns[current_assign_idx]
-      assign_var = self.get_curr_var()
-      sat_clause_count = 0
-      unsat_clause_count = 0
-      unresolved_clause_count = 0
-     
-      print self.assigns
-      print "current_assign_idx ", current_assign_idx
-
-      for c in self.clauses:
-        var = c.get_var_by_index()
-        # c._print()
-        status = c.status
-        if status  == STATUS_OK: # Do not need to test if the clause is sat
-          if self.downwards:
-            sat_clause_count += 1
-          else:
-            if var == assign_var:
-              pass
-        elif status == STATUS_UNRES: # Clasue unresolved
-          # print assign_var_type
-          # print c.lits
-          # print c.index
-          # print "\n"
-          # unresolved_clause_count += 1 
-          if var == assign_var: # assign 1 or 0 to xn
-            var_result = var.result(assign_value)
-            if var_result == 1:
-              c.status = STATUS_OK
-              sat_clause_count += 1
-            elif var_result == 0:
-              c.status = STATUS_UNRES
-              unresolved_clause_count += 1
-              if c.index == c.size()-1:
-                unsat_clause_count += 1
-                c.staus = STATUS_FAIL
-              else:
-                c.index += 1
-          else: # the assignment is not current literal
-            unresolved_clause_count += 1
-            c.status = STATUS_UNRES
-            pass
-         
-        else: # Clause is not sat in current assign
-          unsat_clause_count += 1
-          
-          if self.current_assign_idx == -1:
-            return False
-          else:
-            pass
-     
-      # check sat condition
-      print sat_clause_count, unresolved_clause_count, unsat_clause_count
-      if sat_clause_count == len(self.clauses):
-        self.sat = True
-        return True
-      elif unresolved_clause_count:
-        if assign_value == 1:
-          self.assigns[current_assign_idx] =None
-          self.current_assign_idx -= 1
-        else:
-          self.current_assign_idx += 1
-      elif unsat_clause_count:
-        if (sat_clause_count+unsat_clause_count) == len(self.clauses):
-          self.assigns[current_assign_idx] = None
-          self.current_assign_idx -= 1
-          if self.current_assign_idx == -1:
-            return False
 
 
 
