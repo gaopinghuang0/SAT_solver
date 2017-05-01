@@ -75,7 +75,6 @@ class DLL_Solver(object):
     self.current_assign_idx = i
       # return
 
-    # reset clause.index so that var is just more than assign_var
     # if clause.index -> var is larger than assign_var, reset to the first one that is more than assign var
     # otherwise, stay the same
     assign_var = self.get_curr_var()

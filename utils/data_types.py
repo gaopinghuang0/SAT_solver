@@ -23,10 +23,13 @@ class Lit(object):
 
   def result(self, assign):
     """
-    assign: 0 or 1
+    assign: None, 0 or 1
+    if assign is None, return None
     if self.x > 0, return assign
     if self.x < 0, return 1 if assign == 0 else 0
     """
+    if assign is None:
+      return None
     if self.x > 0:
       return assign
     elif assign == 0:

@@ -13,6 +13,7 @@ def parse(filename, solver):
         if var_num is not None:
           raise ValueError('only one line of p is allowed')
         _, cnf, var_num, clause_num = line.split()
+        solver.total_var_num = var_num
       elif line.startswith('c'):
         pass
       else:
