@@ -11,6 +11,7 @@ from subprocess import call, Popen, PIPE
 
 from DLL.dll import DLL_Solver
 from GRASP.grasp import GRASP_Solver
+from Chaff.chaff import Chaff_Solver
 
 from utils.dimacs_parser import parse
 from utils.file_generator import file_gen
@@ -19,33 +20,30 @@ from utils.file_generator import file_gen
 
 path = './benchmarks'
 
-def dll_solve(filename):
+def solve(method, filename, verbose=True):
   if not filename:
     return
 
-  solver = DLL_Solver()
+  if method == '-dll':
+    solver = DLL_Solver()
+  elif method == '-grasp':
+    solver = GRASP_Solver()
+  elif method == '-chaff':
+    solver = Chaff_Solver()
+  else:
+    print 'unknown method'
+    return
+
   parse(filename, solver)
   # print '#'*6, 'before', '#'*6
   # solver._print(False)
 
   solver.solve()
   # print '#'*6, 'after', '#'*6
-  solver._print(False)
+  if verbose:
+    solver._print(False)
 
-def grasp_solve(filename):
-  if not filename:
-    return
-
-  solver = GRASP_Solver()
-  parse(filename, solver)
-  # print '#'*6, 'before', '#'*6
-  # solver._print(False)
-
-  solver.solve()
-  # print '#'*6, 'after', '#'*6
-  # solver._print(False)
   return solver
-
 
 def gen_n_random_file(n=1):
   for i in xrange(n):
@@ -65,7 +63,7 @@ def compare_all():
     p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
     out, err = p.communicate()
 
-    solver = grasp_solve(fn)
+    solver = solve('-chaff', fn, False)
     if solver.sat == 1 and 'UNSATISFIABLE' not in out:
       print 'ok'
     elif solver.sat == 0 and 'UNSATISFIABLE' in out:
@@ -85,14 +83,12 @@ def main():
       return
     elif not argv[1].startswith('-'):
       # run default
-      dll_solve(argv[1])
+      solve('-chaff', argv[1])
       return
   elif len(argv) == 3:
     method = argv[1]
-    if method == '-dll':
-      dll_solve(argv[2])
-    elif method == '-grasp':
-      grasp_solve(argv[2])
+    if method in ['-dll', '-grasp', '-chaff']:
+      solve(method, argv[2], True)
     elif method == '-gen':
       gen_n_random_file(int(argv[2]))
     return

@@ -3,6 +3,7 @@
 
 from __future__ import division, unicode_literals # boilerplate
 from utils.data_types import *
+from GRASP.grasp import GRASP_Solver
 
 DEBUG = False
 
@@ -10,56 +11,46 @@ def dbg(*kw):
   if DEBUG:
     print kw
 
-class GRASP_Solver(object):
+class Chaff_Solver(GRASP_Solver):
   def __init__(self, clauses=None):
-    self.sat = STATUS_UNRES
-    self.clauses = clauses or []
-    self.assigns = {}  # {var: assign_value}
-    self.tautology = []
-    self.assign_stack = []   # e.g., x1, x3, x7
-    self.assign_graph = []   # each edge [xi, xj] in which xj is implied var
-    self.prop_ok = False
-    self.total_var_num = 0
-
-  def init(self):
-    res = set()
-    for c in self.clauses:
-      for value in c.to_list():
-        res.add(abs(value))
-    for var in res:
-      self.assigns[var] = None
-
-  def size(self):
-    return len(self.clauses)
-
-  def add_clause(self, clause):
-    clause.my_sort()
-    _lits = clause.to_list()
-    if len(_lits) > len(set(map(abs, _lits))):
-      self.tautology.append(clause)
-      # print _lits, 'is tautology'
-      return
-    if not isinstance(clause, Clause):
-      raise TypeError('type should be Clause')
-    self.clauses.append(clause)
-
-  def _print(self, verbose=False):
-
-    if verbose:
-      for c in self.clauses:
-        c._print()
-        
-    if self.sat == STATUS_OK:
-      print 'RESULT: SAT'
-      print 'ASSIGNMENT:',
-      for var, ass in self.assigns.iteritems():
-        print 'x{}={}'.format(var, ass),
-      print
-    else:
-      print 'RESULT: UNSAT'
+    super(self.__class__, self).__init__()
 
   def update_status(self, c):
+    def find_next_watch(lit_index):
+      max_index = max(c.watch)
+      for ind, lit in enumerate(c.lits):
+        if ind > max_index and (self.assigns.get(lit.var) is None):
+          c.watch.remove(lit_index)
+          c.watch.append(ind)
+          break
+
+    def check_watch(watch_index):
+      dbg(c.watch, watch_index, c.lits)
+      lit_index = c.watch[watch_index]
+      watch_lit = c.get_lit_by_index(lit_index)
+      assign_value = self.assigns.get(watch_lit.var)
+      if assign_value is not None:
+        if watch_lit.result(assign_value) == 1:
+          c.status = STATUS_OK
+          return True
+        else:
+          find_next_watch(lit_index)
+          return False
+      return None
+
     if c.status == STATUS_OK:
+      return
+
+    # check two watches of each clause
+    # one watch is STATUS_OK, then no need to go further
+    # or if two watches are both None, then no need to go further
+    check1 = check_watch(0)
+    check2 = check_watch(1)
+    if check1 or check2:
+      c.is_unit_clause = False
+      return
+    if check1 is None and check2 is None:
+      c.is_unit_clause = False
       return
 
     count = 0
@@ -81,43 +72,7 @@ class GRASP_Solver(object):
       c.is_unit_clause = True
     else:
       c.is_unit_clause = False
-
-  def get_imply(self, c, single_clause=False):
-    """find the only one var left in the unit clause and imply its value"""
-    if single_clause:  # if single_clause, imply value regardless of current assign value
-      lit = c.get_lit_by_index(0)
-      return lit.var, 1 if lit.value > 0 else 0
-
-    for lit in c.lits:
-      var = lit.var
-      assign_value = self.assigns[var]
-      var_result = lit.result(assign_value)
-      if var_result is None:
-        return var, 1 if lit.value > 0 else 0
-
-  def update_assigns(self, imply_var_dict):
-    for var, imply_value in imply_var_dict.iteritems():
-      self.assigns[var] = imply_value
-
-  def build_graph(self, c):
-    if c.size() == 1:
-      return
-
-    target = None
-    for lit in c.lits:
-      var = lit.var
-      assign_value = self.assigns[var]
-      var_result = lit.result(assign_value)
-      if var_result is None:
-        target = var
-        break
-    if target:
-      for lit in c.lits:
-        if lit.var != target:
-          self.assign_graph.append([lit.var, target])
-    else:
-      raise ValueError('target should not be None')
-
+    
 
   def propogate(self):
     """implication"""
@@ -143,6 +98,10 @@ class GRASP_Solver(object):
 
       if c.status == STATUS_FAIL:
         raise ValueError('should be able to detect conflict and not fail here')
+      # elif self.is_imply_failed(c, imply_var_dict):
+      #   self.build_graph(c)
+      #   self.prop_ok = False
+      #   self.conflict_var = 
       elif c.is_unit_clause:
         self.build_graph(c)
         var, imply_value = self.get_imply(c)
@@ -180,30 +139,6 @@ class GRASP_Solver(object):
         break
     return found
 
-  def get_conflict_clause(self):
-    # print 'conflict_var', self.conflict_var
-    c = Clause()
-    for edge in self.assign_graph:
-      if edge[1] == self.conflict_var:
-        c.add_var(edge[0])
-    c.my_sort()
-    return c
-
-  def non_chronological_backtrack(self, c):
-    '''relevant vars should be in the conflict clause
-      back track from the top of assign_stack
-    '''
-    all_relevant_vars = map(abs, c.to_list())
-    back_var = None
-
-    for var in self.assign_stack[::-1]:
-      if var in all_relevant_vars:
-        assign_value = self.assigns[var]
-        if assign_value == 0:  # find one assign var with 0
-          back_var = var
-          break
-    return back_var
-
   def reset_all_clauses(self, back_var):
     """reset assigns, remove from assign_stack, remove from assign_graph"""
     # print 'before reset', self.assign_stack, self.assigns, self.assign_graph
@@ -227,6 +162,7 @@ class GRASP_Solver(object):
 
     for c in self.clauses:
       c.status = STATUS_UNRES
+      c.watch = [0, 1]
     # print 'after reset', self.assign_stack, self.assigns, self.assign_graph
 
 
@@ -242,6 +178,9 @@ class GRASP_Solver(object):
       c = self.get_conflict_clause()
       if c:
         self.add_clause(c)
+        is_single_clause = c.size() == 1
+        if is_single_clause:
+          return self.preprocess()
         back_var = self.non_chronological_backtrack(c)
         if back_var:
           self.reset_all_clauses(back_var)
@@ -250,12 +189,63 @@ class GRASP_Solver(object):
           self.sat = STATUS_FAIL
           return False
 
-  def assign_dont_care_vars(self):
-    for var in xrange(1, self.total_var_num+1):
-      if var not in self.assigns:
-        self.assigns[var] = 0   # arbitrarily set it to 0
+  def preprocess(self):
+    def is_validate(var, imply_value):
+      # we allow multiple vars
+      if var not in imply_var_dict:
+        return True
+      return imply_var_dict[var] == imply_value
+
+    # check single clause assign imply value
+    imply_var_dict = {}
+    for c in self.clauses:
+      if c.size() == 1:
+        lit = c.get_lit_by_index(0)
+        # imply value for single clause
+        var, imply_value = self.get_imply(c, True)
+        if is_validate(var, imply_value):
+          imply_var_dict[var] = imply_value
+        else:
+          self.sat = STATUS_FAIL
+          return False
+
+    self.update_assigns(imply_var_dict)
+    # remove all single clause if any
+    if len(imply_var_dict):
+      self.clauses = [c for c in self.clauses if c.size() > 1]
+
+    # remove any clause that is sat or return Fail if one is Fail
+    sat_index = []
+    for index, c in enumerate(self.clauses):
+      count = 0
+      for lit in c.lits:
+        var = lit.var
+        assign_value = self.assigns[var]
+        var_result = lit.result(assign_value)
+        if var_result == 1:
+          c.status = STATUS_OK
+          sat_index.append(index)
+          break
+        elif var_result is None:
+          count += 1
+      if count == 0 and c.status != STATUS_OK:
+        c.status = STATUS_FAIL
+        self.sat = STATUS_FAIL
+        return False
+    
+    if sat_index:
+      self.clauses = [c for index, c in enumerate(self.clauses) if index not in sat_index]
+
+    # init watch for each clause
+    for c in self.clauses:
+      c.watch = [0, 1]
+
+    return True
 
   def solve(self):
+    if not self.preprocess():
+      return STATUS_FAIL
+
     while self.has_next():
       pass
 

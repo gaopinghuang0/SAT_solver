@@ -51,8 +51,10 @@ class Lit(object):
 class Clause(object):
   def __init__(self, lits=None):
     self.lits = lits or []
-    self.index = 0
+    self.index = 0  # for DLL only
     self.status = STATUS_UNRES
+    self.is_unit_clause = False
+    self.watch = []  # size should be 2, [i, j] index of var  # for chaff only
     
   def add_var(self, p):
     if isinstance(p, Lit):
