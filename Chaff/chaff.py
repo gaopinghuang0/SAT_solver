@@ -2,18 +2,31 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, unicode_literals # boilerplate
+from math import ceil
+
 from utils.data_types import *
 from GRASP.grasp import GRASP_Solver
+from collections import Counter
 
 DEBUG = False
+
+ENABLE_VSIDS = True   # pick the var with largest counter first
+DECAY_RATIO = 1.4
+DECAY_PERIOD = 10
 
 def dbg(*kw):
   if DEBUG:
     print kw
 
+def dbg_decay(*kw):
+  if DEBUG and ENABLE_VSIDS:
+    print kw
+
 class Chaff_Solver(GRASP_Solver):
   def __init__(self, clauses=None):
     super(self.__class__, self).__init__()
+    self.var_counter = Counter()
+    self.decay_ratio = 1
 
   def update_status(self, c):
     def find_next_watch(lit_index):
@@ -126,9 +139,10 @@ class Chaff_Solver(GRASP_Solver):
       self.propogate()
 
   def set_next_var(self):
-    """"""
+    """order by count of each var"""
     found = False
-    for var, assign in self.assigns.iteritems():
+    for var, count in self.var_counter.most_common():
+      assign = self.assigns[var]
       if assign is None:
         if var in self.assign_stack:
           raise ValueError('should not be assigned')
@@ -184,6 +198,8 @@ class Chaff_Solver(GRASP_Solver):
         back_var = self.non_chronological_backtrack(c)
         if back_var:
           self.reset_all_clauses(back_var)
+          if ENABLE_VSIDS:
+            self.update_var_counter(c)
           return True
         else:
           self.sat = STATUS_FAIL
@@ -242,12 +258,40 @@ class Chaff_Solver(GRASP_Solver):
 
     return True
 
+  def update_var_counter(self, conflict_clause=None):
+    # we save the x and -x as the same counter
+    counter = Counter()
+    for c in self.clauses:
+      if c.status == STATUS_UNRES:
+        for lit in c.lits:
+          counter[lit.var] += 1
+    dbg_decay('pre decay', counter)
+    for cnt in counter:
+      counter[cnt] = ceil(counter[cnt] / self.decay_ratio)
+    dbg_decay('after decay', counter)
+    if conflict_clause:
+      for lit in conflict_clause.lits:
+        counter[lit.var] += 1
+      dbg_decay('add conflict', counter)
+
+    self.var_counter = counter
+
+  def decay_var_counter(self):
+    self.decay_ratio *= DECAY_RATIO
+    dbg_decay(self.decay_ratio)
+
   def solve(self):
     if not self.preprocess():
       return STATUS_FAIL
 
+    self.update_var_counter() # always init counter
+
+    update_count = 0
     while self.has_next():
-      pass
+      update_count += 1
+      if ENABLE_VSIDS and (update_count % DECAY_PERIOD == 0):
+        self.decay_var_counter()
+
 
     if self.sat == STATUS_OK and len(self.assigns) < self.total_var_num:
       self.assign_dont_care_vars()
