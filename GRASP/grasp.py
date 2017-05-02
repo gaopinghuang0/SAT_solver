@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, unicode_literals # boilerplate
-import os, sys
-sys.path.insert(0, os.path.abspath(".."))
-
 from utils.data_types import *
 
 DEBUG = False
@@ -230,18 +227,21 @@ class GRASP_Solver(object):
       if var == back_var:
         index = ind
         if self.assigns[var] == 0:
-          self.assigns[var] = 1
+          self.assigns[var] = 1 
           self.assign_graph = [edge for edge in self.assign_graph \
-          if var not in edge]
+          if var not in edge]  # remove from assign_graph
         else:
-          raise ValueError('should be ')
+          raise ValueError('should be 0')
         
       if index and ind > index:   # reset each var that are after back_var
         self.assigns[var] = None
         self.assign_graph = [edge for edge in self.assign_graph \
-          if var not in edge]
+          if var not in edge]  # remove from assign_graph
 
-    self.assign_stack = self.assign_stack[:index+1]
+    self.assign_stack = self.assign_stack[:index+1]  # remove from assign_stack
+
+    for c in self.clauses:
+      c.status = STATUS_UNRES
     # print 'after reset', self.assign_stack, self.assigns, self.assign_graph
 
 

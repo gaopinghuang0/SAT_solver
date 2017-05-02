@@ -7,7 +7,7 @@ import sys, os
 
 from random import randint
 from time import sleep
-from subprocess import call
+from subprocess import call, Popen, PIPE
 
 from DLL.dll import DLL_Solver
 from GRASP.grasp import GRASP_Solver
@@ -43,7 +43,8 @@ def grasp_solve(filename):
 
   solver.solve()
   # print '#'*6, 'after', '#'*6
-  solver._print(False)
+  # solver._print(False)
+  return solver
 
 
 def gen_n_random_file(n=1):
@@ -59,10 +60,19 @@ def compare_all():
   for f in os.listdir(path):
     fn = os.path.join(path, f)
     print '\ntesting ', fn
-    cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -model -verb=0'.format(fn)
-    call(cmd, shell=True)
+    # cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -model -verb=0'.format(fn)
+    cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -verb=0'.format(fn)
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+    out, err = p.communicate()
 
-    grasp_solve(fn)
+    solver = grasp_solve(fn)
+    if solver.sat == 1 and 'UNSATISFIABLE' not in out:
+      print 'ok'
+    elif solver.sat == 0 and 'UNSATISFIABLE' in out:
+      print 'ok'
+    else:
+      print 'not matched, our result is {}'.format(solver.sat) 
+
     sleep(1)
 
 
@@ -72,6 +82,7 @@ def main():
   if len(argv) == 2:
     if argv[1] == '-all':
       compare_all()
+      return
     elif not argv[1].startswith('-'):
       # run default
       dll_solve(argv[1])

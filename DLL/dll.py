@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, unicode_literals # boilerplate
-import os, sys
-sys.path.insert(0, os.path.abspath(".."))
 
 from utils.data_types import *
 
