@@ -4,7 +4,6 @@
 from __future__ import division, unicode_literals # boilerplate
 
 from utils.data_types import *
-from utils.utils import timing
 
 class DLL_Solver(object):
   def __init__(self, clauses=None):
@@ -131,7 +130,6 @@ class DLL_Solver(object):
         raise ValueError('should not be unres when all variables are assigned')
     return True
 
-  @timing
   def solve(self):
     while self.pick_next():
       current_assign_idx = self.current_assign_idx

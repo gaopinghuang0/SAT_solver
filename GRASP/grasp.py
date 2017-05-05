@@ -3,7 +3,6 @@
 
 from __future__ import division, unicode_literals # boilerplate
 from utils.data_types import *
-from utils.utils import timing
 
 DEBUG = False
 
@@ -45,7 +44,6 @@ class GRASP_Solver(object):
     self.clauses.append(clause)
 
   def _print(self, verbose=False):
-
     if verbose:
       for c in self.clauses:
         c._print()
@@ -60,6 +58,13 @@ class GRASP_Solver(object):
       print 'RESULT: UNSAT'
 
   def update_status(self, c):
+    """Check status for each clause based on self.assigns
+
+    Affect:
+      c.status, c.is_unit_clause, self.sat
+    params:
+      c: the clause to be checked
+    """
     if c.status == STATUS_OK:
       return
 
@@ -84,7 +89,7 @@ class GRASP_Solver(object):
       c.is_unit_clause = False
 
   def get_imply(self, c, single_clause=False):
-    """find the only one var left in the unit clause and imply its value"""
+    """Find the only one var left in the unit clause and imply its value"""
     if single_clause:  # if single_clause, imply value regardless of current assign value
       lit = c.get_lit_by_index(0)
       return lit.var, 1 if lit.value > 0 else 0
@@ -97,10 +102,15 @@ class GRASP_Solver(object):
         return var, 1 if lit.value > 0 else 0
 
   def update_assigns(self, imply_var_dict):
+    """Update self.assigns using imply_var_dict"""
     for var, imply_value in imply_var_dict.iteritems():
       self.assigns[var] = imply_value
 
   def build_graph(self, c):
+    """Build the assign graph for unit clause.
+    
+    Find the only var left in the unit clause as the target of new edge.
+    """
     if c.size() == 1:
       return
 
@@ -121,7 +131,10 @@ class GRASP_Solver(object):
 
 
   def propogate(self):
-    """implication"""
+    """BCP
+    
+    Imply value for unit clause and propagate.
+    """
     def is_validate(var, imply_value):
       if len(imply_var_dict) == 0:
         return True
@@ -140,14 +153,15 @@ class GRASP_Solver(object):
         sat_clause_count += 1
         continue
       # print c.to_list(), self.is_unit_clause(c), c.status, self.assigns, self.assign_stack
-      dbg(c.to_list(), c.is_unit_clause, self.assigns)
+      # dbg(c.to_list(), c.is_unit_clause, self.assigns)
 
       if c.status == STATUS_FAIL:
         raise ValueError('should be able to detect conflict and not fail here')
       elif c.is_unit_clause:
         self.build_graph(c)
         var, imply_value = self.get_imply(c)
-        dbg(var, imply_value, self.assign_graph, is_validate(var, imply_value))
+        # dbg(var, imply_value, self.assign_graph, is_validate(var, imply_value))
+        # print self.assigns, var, imply_var_dict, is_validate(var, imply_value)
         if is_validate(var, imply_value):
           imply_var_dict[var] = imply_value
         else:
@@ -162,13 +176,16 @@ class GRASP_Solver(object):
       self.sat = STATUS_OK
 
     self.prop_ok = True
-    if len(imply_var_dict):
-      # print 'imply_var_dict', imply_var_dict
-      self.update_assigns(imply_var_dict)
-      self.propogate()
+    return imply_var_dict
+    # Avoid tail recursion
+    # if len(imply_var_dict):
+    #   # print 'imply_var_dict', imply_var_dict
+    #   self.update_assigns(imply_var_dict)
+    #   self.propogate()
 
   def set_next_var(self):
-    """"""
+    """Pick the next var from self.assigns whose value is None."""
+
     found = False
     for var, assign in self.assigns.iteritems():
       if assign is None:
@@ -182,7 +199,8 @@ class GRASP_Solver(object):
     return found
 
   def get_conflict_clause(self):
-    # print 'conflict_var', self.conflict_var
+    """Get conflict clause based on conlict var and assign graph."""
+
     c = Clause()
     for edge in self.assign_graph:
       if edge[1] == self.conflict_var:
@@ -190,24 +208,48 @@ class GRASP_Solver(object):
     c.my_sort()
     return c
 
-  def non_chronological_backtrack(self, c):
-    '''relevant vars should be in the conflict clause
-      back track from the top of assign_stack
+  def get_all_relevant_vars(self):
+    """Span the assign graph to find all the vars that are relevant to the conflict var."""
+
+    all_relevant_vars = set([self.conflict_var])
+    var_stack = [self.conflict_var]
+    while var_stack:
+      var = var_stack.pop()
+      for edge in self.assign_graph:
+        if edge[1] == var:
+          parent_var = edge[0]
+          if parent_var not in all_relevant_vars:
+            var_stack.append(parent_var)
+            all_relevant_vars.add(parent_var)
+    return all_relevant_vars
+
+  def non_chronological_backtrack(self):
+    '''Backtrack from the top of assign_stack 
+        until the first var that is relevant to the conflict var and has value 0.
+      Then change value from 0 to 1.
     '''
-    all_relevant_vars = map(abs, c.to_list())
+    all_relevant_vars = self.get_all_relevant_vars()
+    # print self.conflict_var, all_relevant_vars, self.assign_stack, self.assigns
     back_var = None
 
     for var in self.assign_stack[::-1]:
-      if var in all_relevant_vars:
+      if var in all_relevant_vars:   # debug
         assign_value = self.assigns[var]
         if assign_value == 0:  # find one assign var with 0
           back_var = var
           break
+    # print back_var
     return back_var
 
   def reset_all_clauses(self, back_var):
-    """reset assigns, remove from assign_stack, remove from assign_graph"""
-    # print 'before reset', self.assign_stack, self.assigns, self.assign_graph
+    """Reset all the vars of assign stack after back_var.
+
+    reset assigns, remove from assign_stack, remove from assign_graph
+    reset watch variables
+
+    params:
+      back_var: the var where backtrack process ends
+    """
     index = None
     for ind, var in enumerate(self.assign_stack):
       if var == back_var:
@@ -237,18 +279,26 @@ class GRASP_Solver(object):
 
 
   def has_next(self):
+    """ Determine whether to stop or continue.
+    
+    Repeat propagating until convergence and then determine forward or backtracking.
+    """
     if self.sat == STATUS_OK:
       return False
 
-    self.propogate()
-    dbg('prop_ok', self.prop_ok)
+    imply_var_dict = self.propogate()
+    while imply_var_dict:
+      self.update_assigns(imply_var_dict)
+      imply_var_dict = self.propogate()
+      
+    # dbg('prop_ok', self.prop_ok)
     if self.prop_ok:
       return self.set_next_var()
     else:  # has conflict or fail all
       c = self.get_conflict_clause()
       if c:
         self.add_clause(c)
-        back_var = self.non_chronological_backtrack(c)
+        back_var = self.non_chronological_backtrack()
         if back_var:
           self.reset_all_clauses(back_var)
           return True
@@ -257,15 +307,15 @@ class GRASP_Solver(object):
           return False
 
   def assign_dont_care_vars(self):
+    """Assign value 0 to vars that did not appear in any clauses.
+    """
     for var in xrange(1, self.total_var_num+1):
       if var not in self.assigns:
         self.assigns[var] = 0   # arbitrarily set it to 0
 
-  @timing
   def solve(self):
+    """Entry function."""
     while self.has_next():
-      print self.assigns
-      print self.assign_stack
       pass
 
     if self.sat == STATUS_OK and len(self.assigns) < self.total_var_num:

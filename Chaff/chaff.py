@@ -7,7 +7,6 @@ from math import ceil
 from GRASP.grasp import GRASP_Solver
 from collections import Counter
 from utils.data_types import *
-from utils.utils import timing
 
 DEBUG = False
 
@@ -30,6 +29,14 @@ class Chaff_Solver(GRASP_Solver):
     self.decay_ratio = 1
 
   def update_status(self, c):
+    """ Overwrite GRASP update_status.
+    Check status for each clause based on watch variables
+
+    Affect:
+      c.status, c.is_unit_clause, self.sat, c.watch
+    params:
+      c: the clause to be checked
+    """
     def find_next_watch(lit_index):
       max_index = max(c.watch)
       for ind, lit in enumerate(c.lits):
@@ -39,7 +46,7 @@ class Chaff_Solver(GRASP_Solver):
           break
 
     def check_watch(watch_index):
-      dbg(c.watch, watch_index, c.lits)
+      # dbg(c.watch, watch_index, c.lits)
       lit_index = c.watch[watch_index]
       watch_lit = c.get_lit_by_index(lit_index)
       assign_value = self.assigns.get(watch_lit.var)
@@ -86,61 +93,9 @@ class Chaff_Solver(GRASP_Solver):
       c.is_unit_clause = True
     else:
       c.is_unit_clause = False
-    
-
-  def propogate(self):
-    """implication"""
-    def is_validate(var, imply_value):
-      if len(imply_var_dict) == 0:
-        return True
-      else:
-        # only allow to store one imply var at one time
-        if var not in imply_var_dict:
-          return False
-        return imply_var_dict[var] == imply_value
-
-    imply_var_dict = {}
-    sat_clause_count = 0
-    for c in self.clauses:
-      self.update_status(c)
-
-      if c.status == STATUS_OK:
-        sat_clause_count += 1
-        continue
-      # print c.to_list(), self.is_unit_clause(c), c.status, self.assigns, self.assign_stack
-      dbg(c.to_list(), c.is_unit_clause, self.assigns)
-
-      if c.status == STATUS_FAIL:
-        raise ValueError('should be able to detect conflict and not fail here')
-      # elif self.is_imply_failed(c, imply_var_dict):
-      #   self.build_graph(c)
-      #   self.prop_ok = False
-      #   self.conflict_var = 
-      elif c.is_unit_clause:
-        self.build_graph(c)
-        var, imply_value = self.get_imply(c)
-        dbg(var, imply_value, self.assign_graph, is_validate(var, imply_value))
-        if is_validate(var, imply_value):
-          imply_var_dict[var] = imply_value
-        else:
-          if var in imply_var_dict:
-            self.prop_ok = False
-            self.conflict_var = var
-            return
-      else:
-        pass
-
-    if sat_clause_count == self.size():
-      self.sat = STATUS_OK
-
-    self.prop_ok = True
-    if len(imply_var_dict):
-      # print 'imply_var_dict', imply_var_dict
-      self.update_assigns(imply_var_dict)
-      self.propogate()
 
   def set_next_var(self):
-    """order by count of each var"""
+    """Pick the next var based on its counter and assign value to 0 if None."""
     found = False
     for var, count in self.var_counter.most_common():
       assign = self.assigns[var]
@@ -155,7 +110,14 @@ class Chaff_Solver(GRASP_Solver):
     return found
 
   def reset_all_clauses(self, back_var):
-    """reset assigns, remove from assign_stack, remove from assign_graph"""
+    """Reset all the vars of assign stack after back_var.
+
+    Overwrite GRASP reset_all_clauses to also reset the watch variables
+
+    params:
+      back_var: the var where backtrack process ends
+    """
+    
     # print 'before reset', self.assign_stack, self.assigns, self.assign_graph
     index = None
     for ind, var in enumerate(self.assign_stack):
@@ -187,11 +149,21 @@ class Chaff_Solver(GRASP_Solver):
 
 
   def has_next(self):
+    """ Determine whether to stop or continue.
+    
+    Repeat propagating until convergence and then determine forward or backtracking.
+
+    Overwrite GRASP has_next to preprocess single clause and update var counter.
+    """
     if self.sat == STATUS_OK:
       return False
 
-    self.propogate()
-    dbg('prop_ok', self.prop_ok)
+    imply_var_dict = self.propogate()
+    while imply_var_dict:
+      self.update_assigns(imply_var_dict)
+      imply_var_dict = self.propogate()
+
+    # dbg('prop_ok', self.prop_ok)
     if self.prop_ok:
       return self.set_next_var()
     else:  # has conflict or fail all
@@ -201,7 +173,7 @@ class Chaff_Solver(GRASP_Solver):
         is_single_clause = c.size() == 1
         if is_single_clause:
           return self.preprocess()
-        back_var = self.non_chronological_backtrack(c)
+        back_var = self.non_chronological_backtrack()
         if back_var:
           self.reset_all_clauses(back_var)
           if ENABLE_VSIDS:
@@ -212,6 +184,10 @@ class Chaff_Solver(GRASP_Solver):
           return False
 
   def preprocess(self):
+    """Preprocess single clauses.
+
+    Imply value for single clause and then check for tautology or conflict
+    """
     def is_validate(var, imply_value):
       # we allow multiple vars
       if var not in imply_var_dict:
@@ -265,29 +241,33 @@ class Chaff_Solver(GRASP_Solver):
     return True
 
   def update_var_counter(self, conflict_clause=None):
-    # we save the x and -x as the same counter
+    """Update counter if conflict clause and decay periodically."""
+
+    # we save the x and -x to the same counter
     counter = Counter()
     for c in self.clauses:
       if c.status == STATUS_UNRES:
         for lit in c.lits:
           counter[lit.var] += 1
-    dbg_decay('pre decay', counter)
+    # dbg_decay('pre decay', counter)
     for cnt in counter:
       counter[cnt] = ceil(counter[cnt] / self.decay_ratio)
-    dbg_decay('after decay', counter)
+    # dbg_decay('after decay', counter)
     if conflict_clause:
       for lit in conflict_clause.lits:
         counter[lit.var] += 1
-      dbg_decay('add conflict', counter)
+      # dbg_decay('add conflict', counter)
 
     self.var_counter = counter
 
   def decay_var_counter(self):
     self.decay_ratio *= DECAY_RATIO
-    dbg_decay(self.decay_ratio)
+    self.decay_ratio = min(self.size(), self.decay_ratio)
+    # dbg_decay(self.decay_ratio)
 
-  @timing
+
   def solve(self):
+    """Entry function."""
     if not self.preprocess():
       return STATUS_FAIL
 
