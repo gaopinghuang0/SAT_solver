@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, unicode_literals # boilerplate
-from random import randint
+from random import randint, sample
 
 def file_gen(filename, var_num, clause_num):
   content = []
@@ -11,8 +11,8 @@ def file_gen(filename, var_num, clause_num):
     content.append('p cnf {} {}'.format(var_num, clause_num))
     for _ in xrange(clause_num):
       data = []
-      for j in xrange(randint(1, var_num)):
-        data.append((-1)**randint(0, 2) * randint(1, var_num))
+      for j in sample(xrange(1, var_num), randint(3, 7)):
+        data.append((-1)**randint(0, 2) * j)
       content.append(' '.join(map(str, data)) + ' 0')
 
     f.write('\n'.join(content))
@@ -20,6 +20,7 @@ def file_gen(filename, var_num, clause_num):
 
 if __name__ == '__main__':
   def main():
-    file_gen('../benchmarks/random_v40c300.1.cnf', 20, 100)
+    # file_gen('../benchmarks/random_v40c300.1.cnf', 20, 100)
+    file_gen('../benchmarks/new_gen_500_1000.cnf', 500, 1000)
 
   main()

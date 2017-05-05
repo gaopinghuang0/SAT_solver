@@ -4,9 +4,10 @@
 from __future__ import division, unicode_literals # boilerplate
 from math import ceil
 
-from utils.data_types import *
 from GRASP.grasp import GRASP_Solver
 from collections import Counter
+from utils.data_types import *
+from utils.utils import timing
 
 DEBUG = False
 
@@ -174,6 +175,11 @@ class Chaff_Solver(GRASP_Solver):
 
     self.assign_stack = self.assign_stack[:index+1]  # remove from assign_stack
 
+    # reset the assign value of all vars that are not in assign_stack
+    for var in self.assigns:
+      if var not in self.assign_stack:
+        self.assigns[var] = None
+
     for c in self.clauses:
       c.status = STATUS_UNRES
       c.watch = [0, 1]
@@ -280,6 +286,7 @@ class Chaff_Solver(GRASP_Solver):
     self.decay_ratio *= DECAY_RATIO
     dbg_decay(self.decay_ratio)
 
+  @timing
   def solve(self):
     if not self.preprocess():
       return STATUS_FAIL

@@ -3,6 +3,7 @@
 
 from __future__ import division, unicode_literals # boilerplate
 from utils.data_types import *
+from utils.utils import timing
 
 DEBUG = False
 
@@ -225,6 +226,11 @@ class GRASP_Solver(object):
 
     self.assign_stack = self.assign_stack[:index+1]  # remove from assign_stack
 
+    # reset the assign value of all vars that are not in assign_stack
+    for var in self.assigns:
+      if var not in self.assign_stack:
+        self.assigns[var] = None
+
     for c in self.clauses:
       c.status = STATUS_UNRES
     # print 'after reset', self.assign_stack, self.assigns, self.assign_graph
@@ -255,8 +261,11 @@ class GRASP_Solver(object):
       if var not in self.assigns:
         self.assigns[var] = 0   # arbitrarily set it to 0
 
+  @timing
   def solve(self):
     while self.has_next():
+      print self.assigns
+      print self.assign_stack
       pass
 
     if self.sat == STATUS_OK and len(self.assigns) < self.total_var_num:

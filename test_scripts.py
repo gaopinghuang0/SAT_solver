@@ -17,7 +17,6 @@ from utils.dimacs_parser import parse
 from utils.file_generator import file_gen
 
 
-
 path = './benchmarks'
 
 def solve(method, filename, verbose=True):
@@ -47,7 +46,7 @@ def solve(method, filename, verbose=True):
 
 def gen_n_random_file(n=1):
   for i in xrange(n):
-    var = randint(10, 100)
+    var = randint(10, 20)
     clause = randint(100, 1000)
     fn = 'random_v{}c{}.cnf'.format(var, clause)
     fn = os.path.join(path, fn)
@@ -55,23 +54,27 @@ def gen_n_random_file(n=1):
     file_gen(fn, var, clause)
 
 def compare_all():
-  for f in os.listdir(path):
-    fn = os.path.join(path, f)
-    print '\ntesting ', fn
-    # cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -model -verb=0'.format(fn)
-    cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -verb=0'.format(fn)
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
-    out, err = p.communicate()
+  for dp, dn, filenames in os.walk(path):
+    for f in filenames:
+      fn = os.path.join(dp, f)
+      print '\ntesting ', fn
+      # cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -model -verb=0'.format(fn)
+      cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -verb=0'.format(fn)
+      p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+      out, err = p.communicate()
 
-    solver = solve('-chaff', fn, False)
-    if solver.sat == 1 and 'UNSATISFIABLE' not in out:
-      print 'ok'
-    elif solver.sat == 0 and 'UNSATISFIABLE' in out:
-      print 'ok'
-    else:
-      print 'not matched, our result is {}'.format(solver.sat) 
+      solver = solve('-chaff', fn, False)
+      print solver.sat
+      if solver.sat == 1 and 'UNSATISFIABLE' not in out:
+        print 'ok'
+      elif solver.sat == 0 and 'UNSATISFIABLE' in out:
+        print 'ok'
+      else:
+        print 'not matched, our result is {}'.format(solver.sat) 
 
-    sleep(1)
+      sleep(1)
+    # for debug
+    break
 
 
 
