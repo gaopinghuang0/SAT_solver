@@ -9,8 +9,8 @@ class DLL_Solver(object):
   def __init__(self, clauses=None):
     self.sat = STATUS_UNRES
     self.clauses = clauses or []
-    self.assigns = []  # x1, x2, ..., xn
-    self.vars = []
+    self.assigns = []  # assign values of x1, x2, ..., xn
+    self.vars = []  # a list of vars, e.g., x1, x2, ..., xn
     self.current_assign_idx = 0
     self.tautology = []
 
@@ -57,7 +57,8 @@ class DLL_Solver(object):
       print 'RESULT: UNSAT'
 
   def reset_all_clauses(self):
-    # reset current_assign_idx to the first 0 it met backwards
+    """Reset current_assign_idx to the first 0 it met backwards."""
+
     i = self.current_assign_idx
     while i > -1:
       if self.assigns[i] == 1:
@@ -88,6 +89,10 @@ class DLL_Solver(object):
 
 
   def pick_next(self):
+    """Pick next var to work on.
+
+    Determine backtrack or forwards
+    """
     if self.size() == 0:
       self.sat = STATUS_OK if self.tautology else STATUS_FAIL
       return False
@@ -97,9 +102,6 @@ class DLL_Solver(object):
     sat_clause_count = 0
     fail_clause_count = 0
     for c in self.clauses:
-      # if c.status == STATUS_UNRES:
-      #   c._print()
-      #   print c.index
       sat_clause_count += 1 if c.status == STATUS_OK else 0
       fail_clause_count += 1 if c.status == STATUS_FAIL else 0
     if sat_clause_count == self.size():

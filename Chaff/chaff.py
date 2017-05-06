@@ -10,7 +10,7 @@ from utils.data_types import *
 
 DEBUG = False
 
-ENABLE_VSIDS = True   # pick the var with largest counter first
+ENABLE_VSIDS = True   # if enabled, pick the var with largest counter first and decay periodically
 DECAY_RATIO = 1.4
 DECAY_PERIOD = 10
 
@@ -25,7 +25,7 @@ def dbg_decay(*kw):
 class Chaff_Solver(GRASP_Solver):
   def __init__(self, clauses=None):
     super(self.__class__, self).__init__()
-    self.var_counter = Counter()
+    self.var_counter = Counter()  # count for each var among all clauses
     self.decay_ratio = 1
 
   def update_status(self, c):
