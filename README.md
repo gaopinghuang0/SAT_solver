@@ -3,6 +3,7 @@ DPLL, GRASP, Chaff
 
 
 ## Directory structures
+```
 .
 ├── benchmarks
 │   ├── VarNum1000-1500ClauseNum3000-8000
@@ -39,6 +40,7 @@ DPLL, GRASP, Chaff
     ├── __init__.py
     ├── unittest_data_types.py
     └── utils.py
+```
 
 Explanation:
 - benchmarks/ -- All the benchmark files are stored here and organized by their number of variables (i.e., VarNum10-100, VarNum100-1000, VarNum1000-1500)
