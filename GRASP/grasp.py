@@ -16,7 +16,7 @@ class GRASP_Solver(object):
     self.clauses = clauses or []  # store all Clauses
     self.assigns = {}  # e.g., {var: assign_value}
     self.tautology = []  # store tautology Clauses
-    self.assign_stack = []   # a list of assigned variables, e.g., x1, x3, x7
+    self.assign_stack = []   # a list of self-chosen branching variables, e.g., x1, x3, x7
     self.assign_graph = []   # a list of edges, e.g., [xi, xj] (xj is the implied var)
     self.prop_ok = False
     self.total_var_num = 0
@@ -281,7 +281,7 @@ class GRASP_Solver(object):
 
 
   def has_next(self):
-    """ Determine whether to stop or continue.
+    """Pick next var to branch if any.
     
     Repeat propagating until convergence and then determine forward or backtracking.
     """

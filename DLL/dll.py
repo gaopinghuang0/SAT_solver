@@ -89,9 +89,9 @@ class DLL_Solver(object):
 
 
   def pick_next(self):
-    """Pick next var to work on.
+    """Pick next var to branch if any.
 
-    Determine backtrack or forwards
+    Determine backtrack or forward branching
     """
     if self.size() == 0:
       self.sat = STATUS_OK if self.tautology else STATUS_FAIL

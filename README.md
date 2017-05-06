@@ -1,5 +1,5 @@
 # SAT_solver
-DPLL, GRASP, Chaff
+DPLL, GRASP, Chaff in Python2.7
 
 
 ## Directory structures

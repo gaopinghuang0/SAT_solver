@@ -149,7 +149,7 @@ class Chaff_Solver(GRASP_Solver):
 
 
   def has_next(self):
-    """ Determine whether to stop or continue.
+    """Pick next var to branch if any.
     
     Repeat propagating until convergence and then determine forward or backtracking.
 
