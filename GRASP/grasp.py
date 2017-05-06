@@ -12,12 +12,12 @@ def dbg(*kw):
 
 class GRASP_Solver(object):
   def __init__(self, clauses=None):
-    self.sat = STATUS_UNRES
-    self.clauses = clauses or []
-    self.assigns = {}  # {var: assign_value}
-    self.tautology = []
-    self.assign_stack = []   # e.g., x1, x3, x7
-    self.assign_graph = []   # each edge [xi, xj] in which xj is implied var
+    self.sat = STATUS_UNRES   # global status
+    self.clauses = clauses or []  # store all Clauses
+    self.assigns = {}  # e.g., {var: assign_value}
+    self.tautology = []  # store tautology Clauses
+    self.assign_stack = []   # a list of assigned variables, e.g., x1, x3, x7
+    self.assign_graph = []   # a list of edges, e.g., [xi, xj] (xj is the implied var)
     self.prop_ok = False
     self.total_var_num = 0
 
@@ -89,7 +89,8 @@ class GRASP_Solver(object):
       c.is_unit_clause = False
 
   def get_imply(self, c, single_clause=False):
-    """Find the only one var left in the unit clause and imply its value"""
+    """Find the only one var left in the unit clause and imply its value."""
+
     if single_clause:  # if single_clause, imply value regardless of current assign value
       lit = c.get_lit_by_index(0)
       return lit.var, 1 if lit.value > 0 else 0
@@ -102,7 +103,8 @@ class GRASP_Solver(object):
         return var, 1 if lit.value > 0 else 0
 
   def update_assigns(self, imply_var_dict):
-    """Update self.assigns using imply_var_dict"""
+    """Update self.assigns using imply_var_dict."""
+
     for var, imply_value in imply_var_dict.iteritems():
       self.assigns[var] = imply_value
 
@@ -131,7 +133,7 @@ class GRASP_Solver(object):
 
 
   def propogate(self):
-    """BCP
+    """BCP.
     
     Imply value for unit clause and propagate.
     """
@@ -307,14 +309,15 @@ class GRASP_Solver(object):
           return False
 
   def assign_dont_care_vars(self):
-    """Assign value 0 to vars that did not appear in any clauses.
-    """
+    """Assign value 0 to vars that did not appear in any clauses."""
+
     for var in xrange(1, self.total_var_num+1):
       if var not in self.assigns:
         self.assigns[var] = 0   # arbitrarily set it to 0
 
   def solve(self):
     """Entry function."""
+    
     while self.has_next():
       pass
 

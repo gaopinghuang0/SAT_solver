@@ -2,77 +2,82 @@
 DPLL, GRASP, Chaff
 
 
-## Directory
+## Directory structures
 .
 ├── benchmarks
-│   ├── random_v112c1333.cnf
-│   ├── random_v112c2170.cnf
-│   ├── random_v115c2193.cnf
-│   ├── random_v12c425.cnf
-│   ├── random_v161c1908.cnf
-│   ├── random_v166c2799.cnf
-│   ├── random_v17c669.cnf
-│   ├── random_v204c785.cnf
-│   ├── random_v20c935.cnf
-│   ├── random_v270c2818.cnf
-│   ├── random_v281c2705.cnf
-│   ├── random_v287c948.cnf
-│   ├── random_v298c637.cnf
-│   ├── random_v31c791.cnf
-│   ├── random_v35c627.cnf
-│   ├── random_v37c123.cnf
-│   ├── random_v396c4443.cnf
-│   ├── random_v405c2285.cnf
-│   ├── random_v40c925.cnf
-│   ├── random_v481c1665.cnf
-│   ├── random_v486c1670.cnf
-│   ├── random_v519c2639.cnf
-│   ├── random_v52c627.cnf
-│   ├── random_v53c709.cnf
-│   ├── random_v59c265.cnf
-│   ├── random_v59c907.cnf
-│   ├── random_v61c522.cnf
-│   ├── random_v646c4349.cnf
-│   ├── random_v65c759.cnf
-│   ├── random_v68c725.cnf
-│   ├── random_v71c137.cnf
-│   ├── random_v731c4925.cnf
-│   ├── random_v75c749.cnf
-│   ├── random_v840c1930.cnf
-│   ├── random_v89c935.cnf
-│   ├── random_v928c1053.cnf
-│   ├── random_v92c115.cnf
-│   ├── random_v937c1133.cnf
-│   ├── random_v96c605.cnf
-│   └── random_v99c702.cnf
+│   ├── VarNum1000-1500ClauseNum3000-8000
+│   │   ├── random_v1087c7523.cnf
+│   │   ├── ...
+│   ├── VarNum100-1000ClauseNum1000-3000
+│   │   ├── random_v242c2458.cnf
+│   │   ├── ...
+│   └── VarNum10-100ClauseNum100-1000
+│       ├── random_v12c257.cnf
+│       ├── ...
 ├── Chaff
 │   ├── chaff.py
-│   ├── chaff.pyc
-│   ├── __init__.py
-│   └── __init__.pyc
+│   └── __init__.py
+├── CHBR_glucose_agile
+│   ├── bin
+│   │   ├── CHBR_glucose
+│   │   └── starexec_run_default
+│   ├── code
+│   │   ├── ...
 ├── DLL
 │   ├── dll.py
-│   ├── dll.pyc
-│   ├── __init__.py
-│   ├── __init__.pyc
-│   └── test_DLL.py
+│   └── __init__.py
 ├── GRASP
 │   ├── grasp.py
-│   ├── grasp.pyc
-│   ├── __init__.py
-│   └── __init__.pyc
+│   └── __init__.py
 ├── __init__.py
+├── mySolver.py
 ├── README.md
-├── test_scripts.py
 └── utils
     ├── data_types.py
-    ├── data_types.pyc
     ├── dimacs_parser.py
-    ├── dimacs_parser.pyc
     ├── file_generator.py
-    ├── file_generator.pyc
     ├── __init__.py
-    ├── __init__.pyc
     ├── unittest_data_types.py
-    ├── utils.py
-    └── utils.pyc
+    └── utils.py
+
+Explanation:
+- benchmarks/ -- All the benchmark files are stored here and organized by their number of variables (i.e., VarNum10-100, VarNum100-1000, VarNum1000-1500)
+- Chaff/chaff.py, GRASP/grasp.py, and DLL/dll.py -- Three solvers that we implemented
+- CHBR_glucose_agile/ -- Gold standard solver, downloaded from [SAT competition 2016](http://baldur.iti.kit.edu/sat-competition-2016/solvers/agile/)
+- mySolver.py -- excutable script
+- utils/
+  - data_types.py      -- Data structure for Literal and Clause
+  - dimacs_parser.py   -- CNF file parser
+  - file_generator.py  -- Generate random benchmarks
+  - utils.py           -- memory_usage
+
+
+## Compile code
+Since it is written in Python, there is no need to compile code.
+Gold standard solver is already compiled under CHBR_glucose_agile/bin/CHBR_glucose
+
+mySolver.py and CHBR solver should already be excutable. If not, run the code below:
+```
+# make python script and CHBR solver excutable if they are not
+chmod +x mySolver.py
+chmod +x CHBR_glucose_agile/bin/CHBR_glucose
+```
+
+## Run
+Tested on min server (min.ecn.purdue.edu)
+```
+mySolver.py benchmarks/**/*.cnf    # use Chaff by default
+```
+
+- Additional options:
+```
+-grasp        # use GRASP
+-dll          # use DPLL, very slow
+-time         # show runtime of solver
+-mem          # show memory_usage, required to install "psutil", see below
+-all          # solve all benchmarks
+-all-vs-gold  # solve all benchmarks and compare results with CHBR solver
+```
+
+- How to install "psutil" on linux:
+pip install --user psutil  (without root permission, install locally)

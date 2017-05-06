@@ -1,0 +1,50 @@
+This is pBibTeX, Version 0.99d-j0.33 (utf8.euc) (TeX Live 2013)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: main.aux
+The style file: jplain.bst
+Database file #1: bibtex.bib
+Warning--empty booktitle in bib:sat_challenge2012_proceedings
+Warning--empty booktitle in bib:proceedings_of_sc2013
+You've used 5 entries,
+            2620 wiz_defined-function locations,
+            620 strings with 5625 characters,
+and the built_in function-call counts, 2488 in all, are:
+= -- 206
+> -- 115
+< -- 5
++ -- 47
+- -- 42
+* -- 143
+:= -- 345
+add.period$ -- 15
+call.type$ -- 5
+change.case$ -- 36
+chr.to.int$ -- 0
+cite$ -- 7
+duplicate$ -- 128
+empty$ -- 197
+format.name$ -- 63
+if$ -- 565
+int.to.chr$ -- 0
+int.to.str$ -- 5
+missing$ -- 5
+newline$ -- 28
+num.names$ -- 10
+pop$ -- 62
+preamble$ -- 1
+purify$ -- 31
+quote$ -- 0
+skip$ -- 122
+stack$ -- 0
+substring$ -- 99
+swap$ -- 38
+text.length$ -- 5
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 20
+warning$ -- 2
+while$ -- 17
+width$ -- 6
+write$ -- 55
+is.kanji.str$ -- 63
+(There were 2 warnings)

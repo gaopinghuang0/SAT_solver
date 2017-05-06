@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd code/core
+make clean
+cd ../simp
+make clean
+make rs
+cp glucose_static ../../bin/CHBR_glucose

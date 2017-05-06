@@ -1,0 +1,37 @@
+\begin{thebibliography}{1}
+
+
+\bibitem{bib:chaff}
+Moskewicz, M.W., Madigan, C.F., Zhao, Y., Zhang, L., Malik, S.
+\newblock Chaff: Engineering an Efficient SAT Solver. 
+\newblock In Proceedings of the 38th Design Automation Conference, pp 530--535, 2001.
+
+
+
+\bibitem{bib:cbh}
+Dershowitz, Nachum and Hanna, Ziyad and Nadel, Alexander.
+\newblock A Clause-Based Heuristic for SAT Solvers.
+\newblock Theory and Applications of Satisfiability Testing, pp 46--60, 2005.
+
+\bibitem{bib:berkmin}
+Goldberg, Evgueni and Novikov, Yakov.
+\newblock BerkMin: A Fast and Robust Sat-Solver.
+\newblock Design, Automation, and Test in Europe, pp 465--478, 2008.
+
+\bibitem{bib:vmtf}
+L.Ryan.
+\newblock Efficient algorithms for clause-learning SAT solvers.
+\newblock Matser's thesis, Simon Fraser University, 2004.
+
+\bibitem{bib:CHB}
+Hui Liang, J., Ganesh, V., Poupart, P., Czarnecki, K.
+\newblock Exponential Recency Weighted Average Branching Heuristic for SAT Solvers
+\newblock Proceedings of the Thirtieth AAAI Conference on Artificial Intelligence, 2016.
+
+\bibitem{Louvain}
+Blondel, V.D., Guillaume, J.-L., Lambiotte, R., Lefebvre, E.
+\newblock Fast unfolding of communities in large networks. 
+\newblock Journal of Statistical Mechanics: Theory and Experiment. (2008). 
+
+
+\end{thebibliography}

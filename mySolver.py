@@ -15,7 +15,12 @@ from Chaff.chaff import Chaff_Solver
 
 from utils.dimacs_parser import parse
 from utils.file_generator import file_gen
-from utils.utils import memory_usage_psutil
+
+try:
+  from utils.utils import memory_usage_psutil
+  PSUTIL_IMPORTED = True
+except ImportError:
+  PSUTIL_IMPORTED = False
 
 path = './benchmarks'
 
@@ -23,7 +28,7 @@ def solve(method, filename, verbose=True, timing=False, memory_usage=False):
   """ Solve a single file.
 
   params:
-    vs_gold: compare our result with CHBR_glucose
+    vs_gold: compare our result with CHBR_glucose (gold standard)
     timing: show time spent
     memory_usage: show memory usage
   """
@@ -49,7 +54,7 @@ def solve(method, filename, verbose=True, timing=False, memory_usage=False):
 
   if timing:
     print 'solve function took %0.3f s' % ((time2-time1)*1.0)
-  if memory_usage:
+  if PSUTIL_IMPORTED and memory_usage:
     memory_usage_psutil()
   
   if verbose:
@@ -92,8 +97,9 @@ def compare_all(method, vs_gold=True, timing=True, memory_usage=True):
         continue
       print '\n{} solving {}'.format(method, fn)
       if vs_gold:
-        # cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -model -verb=0'.format(fn)
-        cmd = '~/ece595logic/CHBR_glucose_agile/bin/CHBR_glucose {} -verb=0'.format(fn)
+        curr_path = os.path.abspath(".")
+        CHBR_solver = os.path.join(curr_path, 'CHBR_glucose_agile/bin/CHBR_glucose')
+        cmd = '{} {} -verb=0'.format(CHBR_solver, fn)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
         out, err = p.communicate()
 
@@ -122,28 +128,28 @@ def main():
       if size == 3:
         gen_n_random_file(int(argv[2]))
     elif '-all-vs-gold' in argv:
-      if '-grasp' in argv:
-        compare_all('-grasp', vs_gold=True)
-      else:
-        compare_all('-chaff', vs_gold=True)
+      method = '-grasp' if '-grasp' in argv else '-chaff'
+      compare_all(method, vs_gold=True)
     elif '-all' in argv:
-      if '-grasp' in argv:
-        compare_all('-grasp', vs_gold=False)
-      else:
-        compare_all('-chaff', vs_gold=False)
+      method = '-grasp' if '-grasp' in argv else '-chaff'
+      compare_all(method, vs_gold=False)
     elif '-grasp' in argv:
       solve('-grasp', f, True, timing=is_timing, memory_usage=is_mem_use)
     elif '-chaff' in argv:
       solve('-chaff', f, True, timing=is_timing, memory_usage=is_mem_use)
+    elif '-dll' in argv:
+      solve('-dll', f, True, timing=is_timing, memory_usage=is_mem_use)
     else:
+      if not fn:
+        raise Exception('')
       # run chaff as default
       solve('-chaff', f, True, timing=is_timing, memory_usage=is_mem_use)
     return
   except Exception, e:
     print e
   
-  print 'Usage: ./mySolver.py [-grasp, -chaff] [-time, -mem] <cnf file>'
-  print 'OR: ./mySolver.py [-all, -all-vs-gold] [-grasp, -chaff]'
+  print 'Usage: mySolver.py [-grasp|-chaff] [-time] [-mem] <cnf file>'
+  print 'OR: mySolver.py [-all|-all-vs-gold] [-grasp|-chaff]'
 
 if __name__ == '__main__':
   main()
