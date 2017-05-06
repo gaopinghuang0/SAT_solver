@@ -69,6 +69,9 @@ chmod +x CHBR_glucose_agile/bin/CHBR_glucose
 Tested on min server (min.ecn.purdue.edu)
 ```
 mySolver.py benchmarks/**/*.cnf    # use Chaff by default
+
+# OR:
+./mySolver.py benchmarks/**/*.cnf
 ```
 
 - Additional options:
